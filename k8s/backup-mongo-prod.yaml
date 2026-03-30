@@ -1,0 +1,12 @@
+# This is like inserting a row into our new DatabaseBackup table.
+# It says: "I want nightly backups of my mongo-prod database, kept for 7 days."
+# Right now, nothing will ACT on this — it's just data in the Kubernetes database.
+# In Module 4, we'll build a controller that watches for these and does something.
+apiVersion: learn.example.com/v1
+kind: DatabaseBackup
+metadata:
+  name: mongo-prod-backup
+spec:
+  databaseName: mongo-prod
+  schedule: "0 2 * * *"       # Daily at 2 AM
+  retentionDays: 7

@@ -1,0 +1,33 @@
+# This tells Kubernetes: "Before saving any new Pod, ask our webhook server first."
+# This is exactly what Kyverno registers when you create a ClusterPolicy.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: pod-team-label-validator
+webhooks:
+  - name: pod-team-label.example.com
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    # Which resources to intercept
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]     # Only on creation (not updates/deletes)
+        resources: ["pods"]        # Only Pods
+    # Where to send the request
+    clientConfig:
+      # Points to our webhook Service inside the cluster
+      service:
+        name: webhook-server
+        namespace: default
+        path: /validate
+      # The CA cert so Kubernetes trusts our self-signed TLS
+      caBundle: CA_BUNDLE_PLACEHOLDER
+    # Don't block system pods (kube-system namespace)
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["kube-system"]
+    # If our webhook is down, allow the request anyway (safe default)
+    failurePolicy: Ignore

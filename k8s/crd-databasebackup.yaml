@@ -1,0 +1,59 @@
+# This is like running CREATE TABLE in a SQL database.
+# After applying this, Kubernetes "knows" what a DatabaseBackup is.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: databasebackups.learn.example.com   # Must be: <plural>.<group>
+spec:
+  group: learn.example.com                  # Like a namespace/package name
+  names:
+    kind: DatabaseBackup                    # The resource type (like a class name)
+    plural: databasebackups                 # Used in URLs: /apis/learn.example.com/v1/databasebackups
+    singular: databasebackup                # Used in kubectl: kubectl get databasebackup
+    shortNames:
+      - dbb                                # Shortcut: kubectl get dbb
+  scope: Namespaced                         # Lives inside a namespace (vs. cluster-wide)
+  versions:
+    - name: v1
+      served: true                          # This version is available via the API
+      storage: true                         # This version is used for storage in etcd
+      subresources:
+        status: {}                          # Enable the /status subresource so controllers can update status
+      schema:
+        openAPIV3Schema:                    # This is like defining columns in a SQL table
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - databaseName
+                - schedule
+              properties:
+                databaseName:               # Which database to back up
+                  type: string
+                schedule:                   # Cron schedule for backups
+                  type: string
+                retentionDays:              # How many days to keep backups
+                  type: integer
+                  default: 30
+            status:
+              type: object
+              properties:
+                lastBackupTime:             # When was the last backup
+                  type: string
+                phase:                      # Current state: Pending, Running, Completed, Failed
+                  type: string
+      # Make kubectl get dbb output look nice
+      additionalPrinterColumns:
+        - name: Database
+          type: string
+          jsonPath: .spec.databaseName
+        - name: Schedule
+          type: string
+          jsonPath: .spec.schedule
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp

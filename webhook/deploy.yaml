@@ -1,0 +1,41 @@
+# Deploy our webhook server as a Pod inside the cluster
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook-server
+  template:
+    metadata:
+      labels:
+        app: webhook-server
+    spec:
+      containers:
+        - name: webhook-server
+          image: webhook-server
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /root/        # Our Go code reads tls.crt and tls.key from working dir
+              readOnly: true
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: webhook-tls    # The secret we created with our certs
+---
+# Service so the API server can reach our webhook by DNS name
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-server
+spec:
+  selector:
+    app: webhook-server
+  ports:
+    - port: 443
+      targetPort: 8443

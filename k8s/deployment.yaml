@@ -1,0 +1,26 @@
+# A Deployment is like a "desired state" declaration.
+# You say: "I want 2 copies of my app running at all times."
+# Kubernetes says: "Got it, I'll make that happen and keep it that way."
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api           # Name of this deployment (like a service name in docker-compose)
+spec:
+  replicas: 2              # Run 2 copies of our container (for resilience)
+  selector:
+    matchLabels:
+      app: todo-api        # "Find pods that have this label"
+  template:                # Template for creating pods (a pod = one or more containers)
+    metadata:
+      labels:
+        app: todo-api      # Label applied to each pod (must match selector above)
+    spec:
+      containers:
+        - name: todo-api
+          image: golang-learning-app    # The image we loaded into KinD
+          imagePullPolicy: Never        # Don't try to pull from Docker Hub; use the local image
+          ports:
+            - containerPort: 8080       # The port our Go app listens on
+          env:
+            - name: MONGODB_URI
+              value: "REPLACE_WITH_YOUR_MONGODB_URI"  # Never commit real credentials
